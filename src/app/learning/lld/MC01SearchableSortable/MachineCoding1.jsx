@@ -1,27 +1,68 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchUsersData } from "./utils/utils";
-import { FilterUsers } from "./UserList";
-import { DropDown } from "./DropDownSort";
-import { UsersSearch } from "./UsersSearch";
-import { Introduction } from "./Introduction";
+import { FilterUsers } from "./components/UserList";
+import { DropDown } from "./components/DropDownSort";
+import { UsersSearch } from "./components/UsersSearch";
+import { Introduction } from "./components/Introduction";
 import { useFilteredData } from "./hooks/useFilteredData";
 import { sortOptions } from "./data/data";
+import { Pagination } from "./components/Pagination";
 
 const MachineCoding1 = () => {
-  const [apiData, setApiData] = useState();
+  const [apiData, setApiData] = useState([]);
   const [searchData, setSearchData] = useState("");
   const [sortBy, setSortBy] = useState(sortOptions[0].value);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [states, setStates] = useState({
+    loading: true,
+    error: null,
+  });
+
+  const limit = 5;
 
   useEffect(() => {
     const loadUsers = async () => {
-      const data = await fetchUsersData();
-      setApiData(data);
+      try {
+        const data = await fetchUsersData();
+        setApiData(data);
+      } catch (error) {
+        setStates((prev) => {
+          return { ...prev, error: error };
+        });
+      } finally {
+        setStates((prev) => {
+          return { ...prev, loading: false };
+        });
+      }
     };
 
     loadUsers();
   }, []);
 
-  const filteredData = useFilteredData(searchData, apiData, sortBy)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy, searchData]);
+
+  const filteredData = useFilteredData(searchData, apiData, sortBy);
+  const start = (currentPage - 1) * limit;
+  const paginatedData = filteredData.slice(start, start + limit);
+
+  const renderUsers = () => {
+    if (states.loading) {
+      return <>Loading ...</>;
+    }
+
+    if (states.error) {
+      return <p>{states.error}</p>;
+    }
+
+    if (paginatedData.length === 0) {
+      return <p>No users found.</p>;
+    }
+
+    return <FilterUsers filteredData={paginatedData} />;
+  };
 
   return (
     <div>
@@ -36,10 +77,15 @@ const MachineCoding1 = () => {
         />
       </h3>
 
-      <FilterUsers filteredData={filteredData} />
+      <>{renderUsers()}</>
+
+      <Pagination
+        totalUsers={filteredData.length}
+        limit={limit}
+        setCurrentPage={setCurrentPage}
+      />
     </div>
   );
 };
 
 export default MachineCoding1;
-
