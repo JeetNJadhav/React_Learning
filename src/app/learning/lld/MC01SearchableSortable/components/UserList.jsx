@@ -1,9 +1,10 @@
 export const FilterUsers = ({ filteredData }) => {
   return (
-    <div>
+    <div className="userList">
       {filteredData?.map((user) => {
         return (
           <div
+            className="userCard"
             key={user.id}
           >{`${user.id}  -  ${user.firstName} ${user.lastName} `}</div>
         );

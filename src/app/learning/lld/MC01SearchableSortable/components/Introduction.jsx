@@ -1,7 +1,7 @@
 export const Introduction = () => {
   return (
     <>
-    <h2>Maching Coding 1: Searchable and Sortable</h2>
+      <h1>Maching Coding 1: Searchable and Sortable</h1>
       <p>
         To understand requirements please visit Link:{" "}
         <a
@@ -15,7 +15,6 @@ export const Introduction = () => {
     </>
   );
 };
-
 
 // few pointers
 // 10,000 users

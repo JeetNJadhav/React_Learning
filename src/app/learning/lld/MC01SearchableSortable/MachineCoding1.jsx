@@ -65,23 +65,24 @@ const MachineCoding1 = () => {
   };
 
   return (
-    <div>
+    <div className="machineCoding1Parent">
       <Introduction />
 
-      <h3>
+      <div className="toolbar">
         <UsersSearch setSearchData={setSearchData} />
         <DropDown
           sortBy={sortBy}
           setSortBy={setSortBy}
           sortOptions={sortOptions}
         />
-      </h3>
+      </div>
 
       <>{renderUsers()}</>
 
       <Pagination
         totalUsers={filteredData.length}
         limit={limit}
+        currentPage={currentPage}
         setCurrentPage={setCurrentPage}
       />
     </div>
