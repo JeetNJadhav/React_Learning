@@ -1,65 +1,32 @@
 import { useEffect, useRef, useState } from "react";
+import { searchProducts } from "./utils/apis";
+import { Chip } from "./components/Chip";
+import { Introduction } from "./components/Introduction";
+import { Suggestions } from "./components/Suggestions";
 
 const AutoCompleteSearch = () => {
   const [search, setSearch] = useState("");
-  const [products, setProducts] = useState([]);
   const [debouncedValue, setDebouncedValue] = useState("");
+  const [products, setProducts] = useState([]);
   const [chips, setChips] = useState([]);
+  const [keyIdx, setKeyIdx] = useState(-1);
+
   const [state, setState] = useState({
     loading: false,
     error: null,
   });
-  const [keyIdx, setKeyIdx] = useState(-1);
 
-  // for checking number of api calls
   const count = useRef(0);
 
-  const fetchProducts = async () => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
-    try {
-      const resp = await fetch("https://dummyjson.com/products");
-      const data = await resp.json();
-
-      setProducts(data.products);
-    } catch (error) {
-      setState((prev) => ({ ...prev, error: `Api Failed: ${error}` }));
-    } finally {
-      setState((prev) => ({ ...prev, loading: false }));
-    }
-  };
-
-  const searchProducts = async () => {
-    if (!debouncedValue.trim()) {
-      setProducts([]);
-      return;
-    }
-
-    setState((prev) => ({ ...prev, loading: true, error: null }));
-    try {
-      const resp = await fetch(
-        `https://dummyjson.com/products/search?q=${debouncedValue}`,
-      );
-
-      const data = await resp.json();
-      console.log("Api calls: ", ++count.current);
-
-      setProducts(data.products);
-    } catch (error) {
-      setState((prev) => ({ ...prev, error: `Api Failed: ${error}` }));
-    } finally {
-      setState((prev) => ({ ...prev, loading: false }));
-    }
-  };
-
   useEffect(() => {
-    searchProducts();
+    searchProducts({
+      query: debouncedValue,
+      setProducts,
+      setState,
+      count,
+    });
   }, [debouncedValue]);
 
-  // useEffect(() => {
-  //   fetchProducts();
-  // }, []);
-
-  //debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedValue(search);
@@ -68,43 +35,8 @@ const AutoCompleteSearch = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const Suggestions = () => {
-    if (!debouncedValue) return null;
-    if (state.loading) return <p>Loading ...</p>;
-    if (state.error) return <p>{state.error}</p>;
-    if (products.length === 0) return <p>No results..</p>;
-    return products.map((product, index) => (
-      <div
-        key={product.id}
-        onClick={() =>
-          setChips((prev) => {
-            if (prev.includes(product.title)) return prev;
-            return [...prev, product.title];
-          })
-        }
-        className={`suggestion ${keyIdx === index ? "active" : ""}`}
-      >
-        {product.title}
-      </div>
-    ));
-  };
-
-  const Chip = () => {
-    return chips.map((chip) => (
-      <div className="chip" key={chip}>
-        {chip}
-        <button
-          className="chipBtn"
-          onClick={() =>
-            setChips((prev) => {
-              return prev.filter((item) => item !== chip);
-            })
-          }
-        >
-          x
-        </button>
-      </div>
-    ));
+  const selectProduct = (title) => {
+    setChips((prev) => (prev.includes(title) ? prev : [...prev, title]));
   };
 
   const handleKeyDown = (e) => {
@@ -123,19 +55,8 @@ const AutoCompleteSearch = () => {
         e.preventDefault();
 
         if (keyIdx !== -1) {
-          const selectedProduct = products[keyIdx];
-
-          // Same logic as clicking a suggestion
-          console.log(selectedProduct);
-
-          setChips((prev) => {
-            if (prev.includes(selectedProduct.title)) return prev;
-            return [...prev, selectedProduct.title];
-          });
-
-          // setProducts([]);
+          selectProduct(products[keyIdx].title);
         }
-
         break;
 
       case "Escape":
@@ -149,23 +70,13 @@ const AutoCompleteSearch = () => {
 
   return (
     <div>
-      {/* Introduction */}
-      <h1>Maching Coding 2: AutoComplete Search</h1>
-      <p>
-        To understand requirements please visit Link:{" "}
-        <a
-          href="https://beyond-the-brackets.notion.site/Last-24-Hours-Before-a-Frontend-Interview-38f04a732760808a80c1fa784e27c3ea"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Machine Coding
-        </a>
-      </p>
+      <Introduction />
 
       <div className="searchContainer">
         <div className="chipContainer">
-          <Chip />
+          <Chip chips={chips} setChips={setChips} />
         </div>
+
         <input
           type="text"
           value={search}
@@ -174,7 +85,13 @@ const AutoCompleteSearch = () => {
         />
 
         <div className="suggestionContainer">
-          <Suggestions />
+          <Suggestions
+            debouncedValue={debouncedValue}
+            state={state}
+            products={products}
+            keyIdx={keyIdx}
+            setChips={setChips}
+          />
         </div>
       </div>
     </div>
